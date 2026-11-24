@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Agenda Semanal ✨</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Fredoka (Títulos cute) & Quicksand (Cuerpo legible y suave) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        display: ['Fredoka', 'cursive', 'sans-serif'],
+                        sans: ['Quicksand', 'sans-serif'],
+                    },
+                    colors: {
+                        darkbg: '#13131a',
+                        darkcard: '#1b1b24',
+                        darkhover: '#23232f',
+                        darkborder: '#2d2d3d',
+                        pastel: {
+                            lavender: '#d8b4fe',
+                            pink: '#fbcfe8',
+                            mint: '#a7f3d0',
+                            peach: '#fde68a',
+                            sky: '#bae6fd'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Estilos base y scrollbar personalizado */
+        body {
+            background-color: #13131a;
+            color: #f3f4f6;
+            font-family: 'Quicksand', sans-serif;
+            overflow-x: hidden;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #13131a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2d2d3d;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #d8b4fe;
+        }
+
+        /* Micro-interacciones y animaciones suaves */
+        .task-card {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .task-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .checkbox-custom {
+            transition: all 0.2s ease;
+        }
+        .checkbox-custom:active {
+            transform: scale(0.85);
+        }
+
+        .task-completed-text {
+            text-decoration: line-through;
+            opacity: 0.55;
+            transition: all 0.25s ease;
+        }
+
+        /* Estilos exclusivos para IMPRESIÓN (@media print) */
+        @media print {
+            @page {
+                size: landscape;
+                margin: 0.8cm;
+            }
+            body {
+                background-color: #ffffff !important;
+                color: #1f2937 !important;
+                font-size: 11pt;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+            .print-header {
+                display: flex !important;
+                justify-content: space-between;
+                align-items: center;
+                border-bottom: 2px solid #e5e7eb;
+                padding-bottom: 8px;
+                margin-bottom: 12px;
+            }
+            #week-grid {
+                display: grid !important;
+                grid-template-columns: repeat(4, 1fr) !important;
+                gap: 10px !important;
+                width: 100% !important;
+            }
+            .day-column {
+                background-color: #ffffff !important;
+                border: 1.5px solid #d1d5db !important;
+                border-radius: 12px !important;
+                padding: 10px !important;
+                min-height: 220px !important;
+                break-inside: avoid;
+                box-shadow: none !important;
+            }
+            .day-column.today-highlight {
+                border: 2px solid #9333ea !important;
+                background-color: #faf5ff !important;
+            }
+            .day-title-text {
+                color: #111827 !important;
+            }
+            .day-date-text {
+                color: #4b5563 !important;
+            }
+            .task-card {
+                background-color: #f9fafb !important;
+                border: 1px solid #e5e7eb !important;
+                color: #111827 !important;
+                padding: 6px 8px !important;
+                margin-bottom: 6px !important;
+                box-shadow: none !important;
+                transform: none !important;
+            }
+            .task-title-text {
+                color: #111827 !important;
+                font-weight: 600 !important;
+            }
+            .task-note-text {
+                color: #4b5563 !important;
+            }
+            .print-checkbox {
+                width: 14px !important;
+                height: 14px !important;
+                border: 1.5px solid #374151 !important;
+                background-color: #ffffff !important;
+                border-radius: 4px !important;
+            }
+            .print-checkbox.checked::after {
+                content: "✓";
+                color: #111827 !important;
+                font-size: 11px;
+                font-weight: bold;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                line-height: 1;
+            }
+            .category-badge {
+                border: 1px solid #d1d5db !important;
+                color: #1f2937 !important;
+                font-weight: 600 !important;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-pastel-lavender selection:text-darkbg">
+
+    <!-- Encabezado visible solo al imprimir -->
+    <div class="hidden print-header px-2">
+        <div>
+            <h1 class="font-display text-2xl font-bold text-gray-900">✨ Mi Agenda Semanal</h1>
+            <p id="print-week-range" class="text-sm text-gray-600 font-medium"></p>
+        </div>
+        <div class="text-right text-xs text-gray-500">
+            <p>Organización diaria y pendientes</p>
+        </div>
+    </div>
+
+    <!-- Barra Superior de Navegación (Oculta al imprimir) -->
+    <header class="no-print sticky top-0 z-30 bg-darkbg/90 backdrop-blur-md border-b border-darkborder px-4 py-3 sm:px-6">
+        <div class="max-w-[1600px] mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
+            
+            <!-- Logo y Estado de Sincronización -->
+            <div class="flex items-center justify-between w-full md:w-auto gap-4">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-pastel-lavender via-pastel-pink to-pastel-peach flex items-center justify-center text-darkbg shadow-lg shadow-pastel-lavender/10">
+                        <i class="fa-solid fa-sparkles text-lg"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-display text-xl sm:text-2xl font-bold tracking-wide bg-gradient-to-r from-pastel-lavender via-pastel-pink to-pastel-sky bg-clip-text text-transparent">
+                            Agenda Pastel
+                        </h1>
+                        <div class="flex items-center gap-1.5 text-xs">
+                            <span id="sync-dot" class="w-2 h-2 rounded-full bg-pastel-peach animate-pulse"></span>
+                            <span id="sync-status" class="text-gray-400 font-medium">Conectando nube...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botón Sincronizar Dispositivos (Móvil) -->
+                <button onclick="openSyncModal()" title="Vincular PC y Móvil" class="md:hidden p-2.5 rounded-xl bg-darkcard border border-darkborder text-pastel-sky hover:bg-darkhover transition">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                </button>
+            </div>
+
+            <!-- Controles de Navegación Semanal -->
+            <div class="flex items-center gap-2 bg-darkcard p-1.5 rounded-2xl border border-darkborder shadow-inner w-full md:w-auto justify-between md:justify-center">
+                <button onclick="changeWeek(-1)" class="p-2 px-3 rounded-xl hover:bg-darkhover text-gray-300 hover:text-pastel-lavender transition flex items-center gap-1 text-sm font-semibold">
+                    <i class="fa-solid fa-chevron-left text-xs"></i>
+                    <span class="hidden sm:inline">Anterior</span>
+                </button>
+                
+                <div class="px-3 text-center">
+                    <span id="current-week-label" class="font-display text-sm sm:text-base font-semibold text-white tracking-wide">
+                        Cargando semana...
+                    </span>
+                </div>
+
+                <button onclick="goToToday()" class="px-3 py-1.5 rounded-xl bg-pastel-lavender/15 text-pastel-lavender hover:bg-pastel-lavender hover:text-darkbg text-xs font-bold transition">
+                    Hoy
+                </button>
+
+                <button onclick="changeWeek(1)" class="p-2 px-3 rounded-xl hover:bg-darkhover text-gray-300 hover:text-pastel-lavender transition flex items-center gap-1 text-sm font-semibold">
+                    <span class="hidden sm:inline">Siguiente</span>
+                    <i class="fa-solid fa-chevron-right text-xs"></i>
+                </button>
+            </div>
+
+            <!-- Acciones Principales -->
+            <div class="flex items-center gap-2.5 w-full md:w-auto justify-end">
+                <button onclick="openSyncModal()" class="hidden md:flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-darkcard border border-darkborder hover:border-pastel-sky/50 text-pastel-sky text-sm font-semibold transition">
+                    <i class="fa-solid fa-mobile-screen-button"></i>
+                    <span>PC / Móvil</span>
+                </button>
+
+                <button onclick="window.print()" class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-darkcard border border-darkborder hover:border-pastel-mint/50 text-pastel-mint text-sm font-semibold transition">
+                    <i class="fa-solid fa-print"></i>
+                    <span>Imprimir</span>
+                </button>
+
+                <button onclick="openTaskModal()" class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-pastel-lavender to-pastel-pink text-darkbg font-display font-semibold text-sm shadow-lg shadow-pastel-lavender/20 hover:opacity-95 active:scale-95 transition">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Nueva tarea</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenedor Principal de la Agenda -->
+    <main class="flex-1 max-w-[1600px] w-full mx-auto p-4 sm:p-6">
+        <!-- Grid de 7 días + 1 tarjeta de Pendientes sin fecha (4x2 en pantallas grandes, adaptable en móvil) -->
+        <div id="week-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+            <!-- Las columnas se generan dinámicamente con JavaScript -->
+        </div>
+    </main>
+
+    <!-- MODAL: Crear / Editar Tarea -->
+    <div id="task-modal" class="no-print fixed inset-0 z-50 hidden items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+        <div class="bg-darkcard border border-darkborder rounded-3xl w-full max-w-md p-6 shadow-2xl transform transition-all">
+            <div class="flex items-center justify-between mb-5">
+                <h2 id="modal-title" class="font-display text-xl font-bold text-pastel-lavender flex items-center gap-2">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Nueva Tarea
+                </h2>
+                <button onclick="closeTaskModal()" class="w-8 h-8 rounded-full bg-darkhover text-gray-400 hover:text-white flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="task-form" onsubmit="handleSaveTask(event)" class="space-y-4">
+                <input type="hidden" id="task-id">
+
+                <!-- Título -->
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1.5">¿Qué necesitas hacer? *</label>
+                    <input type="text" id="task-title" required placeholder="Ej. Enviar propuesta al cliente..."
+                        class="w-full px-4 py-3 rounded-2xl bg-darkbg border border-darkborder text-white placeholder-gray-500 focus:outline-none focus:border-pastel-lavender transition font-medium">
+                </div>
+
+                <!-- Día asignado y Hora -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1.5">Día</label>
+                        <select id="task-date" class="w-full px-3.5 py-2.5 rounded-2xl bg-darkbg border border-darkborder text-white focus:outline-none focus:border-pastel-lavender transition text-sm font-medium">
+                            <!-- Opciones dinámicas de la semana actual + Sin fecha -->
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1.5">Hora (Opcional)</label>
+                        <input type="time" id="task-time"
+                            class="w-full px-3.5 py-2.5 rounded-2xl bg-darkbg border border-darkborder text-white focus:outline-none focus:border-pastel-lavender transition text-sm font-medium">
+                    </div>
+                </div>
+
+                <!-- Categoría / Color Pastel -->
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Categoría</label>
+                    <div class="grid grid-cols-2 gap-2" id="category-selector">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="task-category" value="clientes" class="peer sr-only" checked>
+                            <div class="px-3 py-2 rounded-xl border border-darkborder bg-darkbg peer-checked:border-pastel-lavender peer-checked:bg-pastel-lavender/15 text-pastel-lavender text-xs font-bold flex items-center gap-2 transition">
+                                <span class="w-2.5 h-2.5 rounded-full bg-pastel-lavender"></span> Trabajo / Clientes
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="task-category" value="urgente" class="peer sr-only">
+                            <div class="px-3 py-2 rounded-xl border border-darkborder bg-darkbg peer-checked:border-pastel-pink peer-checked:bg-pastel-pink/15 text-pastel-pink text-xs font-bold flex items-center gap-2 transition">
+                                <span class="w-2.5 h-2.5 rounded-full bg-pastel-pink"></span> Urgente / Entrega
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="task-category" value="estudios" class="peer sr-only">
+                            <div class="px-3 py-2 rounded-xl border border-darkborder bg-darkbg peer-checked:border-pastel-sky peer-checked:bg-pastel-sky/15 text-pastel-sky text-xs font-bold flex items-center gap-2 transition">
+                                <span class="w-2.5 h-2.5 rounded-full bg-pastel-sky"></span> Estudios / Diseño
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="task-category" value="personal" class="peer sr-only">
+                            <div class="px-3 py-2 rounded-xl border border-darkborder bg-darkbg peer-checked:border-pastel-mint peer-checked:bg-pastel-mint/15 text-pastel-mint text-xs font-bold flex items-center gap-2 transition">
+                                <span class="w-2.5 h-2.5 rounded-full bg-pastel-mint"></span> Personal
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Nota breve -->
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1.5">Nota o detalle breve (Opcional)</label>
+                    <textarea id="task-note" rows="2" placeholder="Detalles extra, enlaces o recordatorios..."
+                        class="w-full px-4 py-2.5 rounded-2xl bg-darkbg border border-darkborder text-white placeholder-gray-500 focus:outline-none focus:border-pastel-lavender transition text-sm resize-none"></textarea>
+                </div>
+
+                <!-- Botones -->
+                <div class="flex items-center justify-end gap-2.5 pt-2">
+                    <button type="button" onclick="closeTaskModal()" class="px-4 py-2.5 rounded-2xl bg-darkhover text-gray-300 hover:text-white text-sm font-semibold transition">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-pastel-lavender to-pastel-pink text-darkbg font-display font-semibold text-sm shadow-lg hover:opacity-95 transition">
+                        Guardar tarea
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Sincronización entre PC y Móvil -->
+    <div id="sync-modal" class="no-print fixed inset-0 z-50 hidden items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+        <div class="bg-darkcard border border-darkborder rounded-3xl w-full max-w-md p-6 shadow-2xl">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="font-display text-xl font-bold text-pastel-sky flex items-center gap-2">
+                    <i class="fa-solid fa-cloud"></i> Sincronizar PC y Móvil
+                </h2>
+                <button onclick="closeSyncModal()" class="w-8 h-8 rounded-full bg-darkhover text-gray-400 hover:text-white flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <p class="text-sm text-gray-300 mb-4 leading-relaxed">
+                Tus tareas se guardan automáticamente en la nube. Para ver exactamente esta misma agenda en tu teléfono o en otra computadora, usa tu <strong>Código de Agenda</strong>:
+            </p>
+
+            <!-- Código Actual -->
+            <div class="bg-darkbg border border-darkborder rounded-2xl p-3.5 mb-5">
+                <label class="block text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1">Tu Código Actual</label>
+                <div class="flex items-center justify-between gap-2">
+                    <code id="display-sync-code" class="text-pastel-mint font-mono text-sm font-bold break-all">Cargando...</code>
+                    <button onclick="copySyncCode()" class="shrink-0 px-3 py-1.5 rounded-xl bg-pastel-mint/15 text-pastel-mint hover:bg-pastel-mint hover:text-darkbg text-xs font-bold transition flex items-center gap-1.5">
+                        <i class="fa-regular fa-copy"></i> Copiar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Vincular otro código -->
+            <div class="border-t border-darkborder pt-4">
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1.5">¿Ya tienes un código de otro dispositivo?</label>
+                <div class="flex gap-2">
+                    <input type="text" id="input-sync-code" placeholder="Pega aquí el código..."
+                        class="flex-1 px-3.5 py-2 rounded-xl bg-darkbg border border-darkborder text-white text-sm focus:outline-none focus:border-pastel-sky">
+                    <button onclick="applyCustomSyncCode()" class="px-4 py-2 rounded-xl bg-pastel-sky text-darkbg font-bold text-sm hover:opacity-90 transition">
+                        Conectar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notificación Toast Flotante -->
+    <div id="toast" class="no-print fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+        <div class="bg-darkcard border border-pastel-lavender/40 text-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-2.5 text-sm font-semibold">
+            <i id="toast-icon" class="fa-solid fa-circle-check text-pastel-mint"></i>
+            <span id="toast-message">Acción completada</span>
+        </div>
+    </div>
+
+    <!-- Lógica de la Aplicación + Firebase Firestore -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Configuración global del entorno
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'agenda-pastel-app';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+
+        // Estado de la aplicación
+        let db = null;
+        let auth = null;
+        let currentUser = null;
+        let unsubscribeTasks = null;
+        let tasks = [];
+        let currentWeekOffset = 0; // 0 = semana actual, -1 = anterior, +1 = siguiente
+        let workspaceCode = "";
+
+        // Definición de categorías y colores pastel
+        const CATEGORIES = {
+            clientes: {
+                label: 'Trabajo / Clientes',
+                badgeBg: 'bg-pastel-lavender/15 text-pastel-lavender border-pastel-lavender/30',
+                dot: 'bg-pastel-lavender',
+                borderHover: 'hover:border-pastel-lavender/50'
+            },
+            urgente: {
+                label: 'Urgente / Entrega',
+                badgeBg: 'bg-pastel-pink/15 text-pastel-pink border-pastel-pink/30',
+                dot: 'bg-pastel-pink',
+                borderHover: 'hover:border-pastel-pink/50'
+            },
+            estudios: {
+                label: 'Estudios / Diseño',
+                badgeBg: 'bg-pastel-sky/15 text-pastel-sky border-pastel-sky/30',
+                dot: 'bg-pastel-sky',
+                borderHover: 'hover:border-pastel-sky/50'
+            },
+            personal: {
+                label: 'Personal',
+                badgeBg: 'bg-pastel-mint/15 text-pastel-mint border-pastel-mint/30',
+                dot: 'bg-pastel-mint',
+                borderHover: 'hover:border-pastel-mint/50'
+            }
+        };
+
+        const DAYS_NAMES = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+        const MONTHS_SHORT = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+        // Inicialización de Firebase y Autenticación
+        async function initFirebase() {
+            if (!firebaseConfig) {
+                updateSyncUI('error', 'Modo local (sin nube)');
+                renderWeek();
+                return;
+            }
+
+            try {
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                // Autenticar primero (Regla obligatoria)
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        currentUser = user;
+                        // Revisar si hay un código de espacio en la URL (?agenda=CODIGO) o usar el UID del usuario
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const sharedCode = urlParams.get('agenda');
+                        workspaceCode = sharedCode ? sharedCode.trim() : user.uid;
+                        
+                        document.getElementById('display-sync-code').textContent = workspaceCode;
+                        subscribeToTasks();
+                    }
+                });
+            } catch (err) {
+                console.error("Error inicializando Firebase:", err);
+                updateSyncUI('error', 'Error de conexión');
+            }
+        }
+
+        // Suscripción en tiempo real a las tareas en Firestore
+        function subscribeToTasks() {
+            if (!db || !currentUser || !workspaceCode) return;
+            if (unsubscribeTasks) unsubscribeTasks();
+
+            updateSyncUI('syncing', 'Sincronizando...');
+
+            // Ruta pública compartida por código de agenda para permitir sincronización PC <-> Móvil fácil
+            const tasksCol = collection(db, 'artifacts', appId, 'public', 'data', `agenda_${workspaceCode}`);
+
+            unsubscribeTasks = onSnapshot(tasksCol, (snapshot) => {
+                tasks = [];
+                snapshot.forEach((docSnap) => {
+                    tasks.push({ id: docSnap.id, ...docSnap.data() });
+                });
+                updateSyncUI('synced', 'Sincronizado en la nube');
+                renderWeek();
+            }, (error) => {
+                console.error("Error en snapshot:", error);
+                updateSyncUI('error', 'Error al sincronizar');
+            });
+        }
+
+        // Actualizar indicador visual de sincronización
+        function updateSyncUI(state, text) {
+            const dot = document.getElementById('sync-dot');
+            const label = document.getElementById('sync-status');
+            label.textContent = text;
+
+            dot.className = 'w-2 h-2 rounded-full';
+            if (state === 'synced') {
+                dot.classList.add('bg-pastel-mint');
+            } else if (state === 'syncing') {
+                dot.classList.add('bg-pastel-peach', 'animate-pulse');
+            } else {
+                dot.classList.add('bg-pastel-pink');
+            }
+        }
+
+        // Utilidades de fechas (Lunes a Domingo)
+        function getWeekDates(offset = 0) {
+            const now = new Date();
+            const currentDay = now.getDay(); // 0 = Domingo, 1 = Lunes...
+            const diffToMonday = currentDay === 0 ? -6 : 1 - currentDay;
+            
+            const monday = new Date(now);
+            monday.setDate(now.getDate() + diffToMonday + (offset * 7));
+            monday.setHours(0, 0, 0, 0);
+
+            const week = [];
+            for (let i = 0; i < 7; i++) {
+                const d = new Date(monday);
+                d.setDate(monday.getDate() + i);
+                week.push({
+                    name: DAYS_NAMES[i],
+                    dateStr: formatDateISO(d),
+                    displayDate: `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}`,
+                    isToday: formatDateISO(d) === formatDateISO(new Date())
+                });
+            }
+            return week;
+        }
+
+        function formatDateISO(date) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        // Renderizar toda la semana y la caja de pendientes sin fecha
+        function renderWeek() {
+            const weekDays = getWeekDates(currentWeekOffset);
+            const grid = document.getElementById('week-grid');
+            
+            // Actualizar etiqueta de rango semanal
+            const rangeText = `${weekDays[0].displayDate} — ${weekDays[6].displayDate}`;
+            document.getElementById('current-week-label').textContent = rangeText;
+            document.getElementById('print-week-range').textContent = `Semana del ${rangeText}`;
+
+            // Actualizar selector de días en el modal
+            populateDateSelect(weekDays);
+
+            let html = '';
+
+            // Renderizar los 7 días (Lunes a Domingo)
+            weekDays.forEach((day) => {
+                const dayTasks = tasks
+                    .filter(t => t.date === day.dateStr)
+                    .sort((a, b) => {
+                        if (a.completed !== b.completed) return a.completed ? 1 : -1;
+                        return (a.time || '99:99').localeCompare(b.time || '99:99');
+                    });
+
+                const todayClasses = day.isToday 
+                    ? 'today-highlight border-pastel-lavender/70 bg-gradient-to-b from-pastel-lavender/[0.07] to-darkcard shadow-lg shadow-pastel-lavender/5' 
+                    : 'border-darkborder bg-darkcard';
+
+                html += `
+                    <section class="day-column flex flex-col rounded-3xl border ${todayClasses} p-4 min-h-[290px] transition-all">
+                        <!-- Cabecera del Día -->
+                        <div class="flex items-center justify-between pb-3 mb-3 border-b border-darkborder/80">
+                            <div class="flex items-center gap-2">
+                                <h2 class="day-title-text font-display text-lg font-bold ${day.isToday ? 'text-pastel-lavender' : 'text-white'}">
+                                    ${day.name}
+                                </h2>
+                                ${day.isToday ? '<span class="no-print px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full bg-pastel-lavender text-darkbg">Hoy</span>' : ''}
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="day-date-text text-xs font-semibold text-gray-400 bg-darkbg px-2.5 py-1 rounded-xl border border-darkborder">
+                                    ${day.displayDate}
+                                </span>
+                                <button onclick="openTaskModal('${day.dateStr}')" title="Añadir tarea en ${day.name}" 
+                                    class="no-print w-7 h-7 rounded-xl bg-darkhover hover:bg-pastel-lavender hover:text-darkbg text-gray-300 flex items-center justify-center transition">
+                                    <i class="fa-solid fa-plus text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Lista de Tareas del Día -->
+                        <div class="flex-1 space-y-2.5">
+                            ${dayTasks.length > 0 
+                                ? dayTasks.map(task => renderTaskCard(task, weekDays)).join('') 
+                                : `<div class="h-full min-h-[140px] flex flex-col items-center justify-center text-center opacity-40 py-6">
+                                     <i class="fa-regular fa-face-smile-beam text-2xl mb-1.5 text-pastel-lavender"></i>
+                                     <p class="text-xs font-medium">Día libre de pendientes</p>
+                                   </div>`
+                            }
+                        </div>
+                    </section>
+                `;
+            });
+
+            // 8va Tarjeta: Pendientes sin fecha / Ideas rápidas (Backlog)
+            const backlogTasks = tasks
+                .filter(t => !t.date || t.date === 'backlog')
+                .sort((a, b) => (a.completed === b.completed ? 0 : a.completed ? 1 : -1));
+
+            html += `
+                <section class="day-column flex flex-col rounded-3xl border border-dashed border-pastel-peach/40 bg-darkcard/70 p-4 min-h-[290px]">
+                    <div class="flex items-center justify-between pb-3 mb-3 border-b border-darkborder/80">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-inbox text-pastel-peach text-sm"></i>
+                            <h2 class="day-title-text font-display text-lg font-bold text-pastel-peach">
+                                Sin fecha / Notas
+                            </h2>
+                        </div>
+                        <button onclick="openTaskModal('backlog')" title="Añadir pendiente sin fecha" 
+                            class="no-print w-7 h-7 rounded-xl bg-darkhover hover:bg-pastel-peach hover:text-darkbg text-pastel-peach flex items-center justify-center transition">
+                            <i class="fa-solid fa-plus text-xs"></i>
+                        </button>
+                    </div>
+
+                    <div class="flex-1 space-y-2.5">
+                        ${backlogTasks.length > 0 
+                            ? backlogTasks.map(task => renderTaskCard(task, weekDays)).join('') 
+                            : `<div class="h-full min-h-[140px] flex flex-col items-center justify-center text-center opacity-40 py-6">
+                                 <i class="fa-solid fa-feather-pointed text-2xl mb-1.5 text-pastel-peach"></i>
+                                 <p class="text-xs font-medium">Anota ideas o tareas<br>aún sin día fijo</p>
+                               </div>`
+                        }
+                    </div>
+                </section>
+            `;
+
+            grid.innerHTML = html;
+        }
+
+        // Renderizar tarjeta individual de tarea
+        function renderTaskCard(task, weekDays) {
+            const cat = CATEGORIES[task.category] || CATEGORIES.clientes;
+            const completedClass = task.completed ? 'task-completed-text' : '';
+            const checkStyle = task.completed 
+                ? 'bg-pastel-mint border-pastel-mint text-darkbg checked' 
+                : 'border-gray-500 hover:border-pastel-lavender bg-transparent';
+
+            // Opciones rápidas para mover de día
+            const moveOptions = weekDays.map(d => 
+                `<option value="${d.dateStr}" ${task.date === d.dateStr ? 'selected' : ''}>${d.name.slice(0,3)} ${d.displayDate}</option>`
+            ).join('') + `<option value="backlog" ${(!task.date || task.date === 'backlog') ? 'selected' : ''}>Sin fecha</option>`;
+
+            return `
+                <div class="task-card group relative bg-darkbg border border-darkborder ${cat.borderHover} rounded-2xl p-3 shadow-sm">
+                    <div class="flex items-start gap-2.5">
+                        <!-- Checkbox animado -->
+                        <button onclick="toggleTaskComplete('${task.id}', ${!task.completed})" 
+                            class="checkbox-custom print-checkbox mt-0.5 w-5 h-5 rounded-lg border-2 flex items-center justify-center shrink-0 ${checkStyle}">
+                            ${task.completed ? '<i class="fa-solid fa-check text-xs font-bold no-print"></i>' : ''}
+                        </button>
+
+                        <!-- Contenido -->
+                        <div class="flex-1 min-w-0">
+                            <div class="flex flex-wrap items-center gap-1.5 mb-1">
+                                <span class="category-badge inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border text-[10px] font-bold ${cat.badgeBg}">
+                                    <span class="w-1.5 h-1.5 rounded-full ${cat.dot} no-print"></span>
+                                    ${cat.label}
+                                </span>
+                                ${task.time ? `<span class="text-[11px] font-bold text-pastel-peach bg-pastel-peach/10 px-1.5 py-0.5 rounded-md"><i class="fa-regular fa-clock mr-1"></i>${task.time}</span>` : ''}
+                            </div>
+
+                            <p class="task-title-text text-sm font-semibold text-gray-100 break-words leading-snug ${completedClass}">
+                                ${escapeHTML(task.title)}
+                            </p>
+
+                            ${task.note ? `<p class="task-note-text text-xs text-gray-400 mt-1 break-words leading-relaxed ${completedClass}">${escapeHTML(task.note)}</p>` : ''}
+
+                            <!-- Controles rápidos (Mover día, Editar, Eliminar) -->
+                            <div class="no-print flex items-center justify-between gap-2 mt-2.5 pt-2 border-t border-darkborder/60 opacity-90 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                <div class="flex items-center gap-1 text-[11px] text-gray-400">
+                                    <i class="fa-solid fa-arrow-right-arrow-left text-[10px] text-pastel-sky"></i>
+                                    <select onchange="moveTaskDay('${task.id}', this.value)" title="Mover a otro día"
+                                        class="bg-darkcard border border-darkborder rounded-lg px-1.5 py-0.5 text-[11px] text-gray-300 focus:outline-none focus:border-pastel-sky cursor-pointer">
+                                        ${moveOptions}
+                                    </select>
+                                </div>
+
+                                <div class="flex items-center gap-1">
+                                    <button onclick="editTask('${task.id}')" title="Editar tarea" class="p-1.5 rounded-lg hover:bg-darkhover text-gray-400 hover:text-pastel-lavender transition">
+                                        <i class="fa-solid fa-pen text-xs"></i>
+                                    </button>
+                                    <button onclick="deleteTask('${task.id}')" title="Eliminar tarea" class="p-1.5 rounded-lg hover:bg-darkhover text-gray-400 hover:text-pastel-pink transition">
+                                        <i class="fa-solid fa-trash-can text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Poblar selector de fechas en el modal
+        function populateDateSelect(weekDays) {
+            const select = document.getElementById('task-date');
+            if (!select) return;
+            select.innerHTML = weekDays.map(d => 
+                `<option value="${d.dateStr}">${d.name} (${d.displayDate})</option>`
+            ).join('') + `<option value="backlog">📌 Sin fecha / Pendiente</option>`;
+        }
+
+        // Operaciones CRUD en Firestore
+        window.handleSaveTask = async function(e) {
+            e.preventDefault();
+            if (!db || !currentUser) {
+                showToast('Esperando conexión con la nube...', 'error');
+                return;
+            }
+
+            const id = document.getElementById('task-id').value;
+            const title = document.getElementById('task-title').value.trim();
+            const date = document.getElementById('task-date').value;
+            const time = document.getElementById('task-time').value;
+            const note = document.getElementById('task-note').value.trim();
+            const category = document.querySelector('input[name="task-category"]:checked').value;
+
+            if (!title) return;
+
+            const tasksCol = collection(db, 'artifacts', appId, 'public', 'data', `agenda_${workspaceCode}`);
+            updateSyncUI('syncing', 'Guardando...');
+
+            try {
+                if (id) {
+                    const taskRef = doc(db, 'artifacts', appId, 'public', 'data', `agenda_${workspaceCode}`, id);
+                    await updateDoc(taskRef, { title, date, time, note, category });
+                    showToast('Tarea actualizada ✨');
+                } else {
+                    await addDoc(tasksCol, {
+                        title,
+                        date,
+                        time,
+                        note,
+                        category,
+                        completed: false,
+                        createdAt: Date.now()
+                    });
+                    showToast('Tarea añadida a tu agenda 💖');
+                }
+                closeTaskModal();
+            } catch (err) {
+                console.error("Error guardando tarea:", err);
+                showToast('No se pudo guardar la tarea', 'error');
+            }
+        };
+
+        window.toggleTaskComplete = async function(id, newState) {
+            if (!db || !currentUser) return;
+            try {
+                const taskRef = doc(db, 'artifacts', appId, 'public', 'data', `agenda_${workspaceCode}`, id);
+                await updateDoc(taskRef, { completed: newState });
+            } catch (err) {
+                console.error("Error cambiando estado:", err);
+            }
+        };
+
+        window.moveTaskDay = async function(id, newDate) {
+            if (!db || !currentUser) return;
+            try {
+                const taskRef = doc(db, 'artifacts', appId, 'public', 'data', `agenda_${workspaceCode}`, id);
+                await updateDoc(taskRef, { date: newDate });
+                showToast('Tarea reprogramada 📅');
+            } catch (err) {
+                console.error("Error moviendo tarea:", err);
+            }
+        };
+
+        window.deleteTask = async function(id) {
+            if (!db || !currentUser) return;
+            try {
+                const taskRef = doc(db, 'artifacts', appId, 'public', 'data', `agenda_${workspaceCode}`, id);
+                await deleteDoc(taskRef);
+                showToast('Tarea eliminada');
+            } catch (err) {
+                console.error("Error eliminando tarea:", err);
+            }
+        };
+
+        // Controladores de Modales y Navegación
+        window.openTaskModal = function(defaultDate = null) {
+            const modal = document.getElementById('task-modal');
+            document.getElementById('task-form').reset();
+            document.getElementById('task-id').value = '';
+            document.getElementById('modal-title').innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Nueva Tarea';
+
+            const weekDays = getWeekDates(currentWeekOffset);
+            populateDateSelect(weekDays);
+
+            if (defaultDate) {
+                document.getElementById('task-date').value = defaultDate;
+            } else {
+                const todayObj = weekDays.find(d => d.isToday);
+                document.getElementById('task-date').value = todayObj ? todayObj.dateStr : weekDays[0].dateStr;
+            }
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => document.getElementById('task-title').focus(), 100);
+        };
+
+        window.editTask = function(id) {
+            const task = tasks.find(t => t.id === id);
+            if (!task) return;
+
+            const modal = document.getElementById('task-modal');
+            document.getElementById('modal-title').innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Editar Tarea';
+            document.getElementById('task-id').value = task.id;
+            document.getElementById('task-title').value = task.title;
+            document.getElementById('task-time').value = task.time || '';
+            document.getElementById('task-note').value = task.note || '';
+
+            const weekDays = getWeekDates(currentWeekOffset);
+            populateDateSelect(weekDays);
+            document.getElementById('task-date').value = task.date || 'backlog';
+
+            const radio = document.querySelector(`input[name="task-category"][value="${task.category || 'clientes'}"]`);
+            if (radio) radio.checked = true;
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        };
+
+        window.closeTaskModal = function() {
+            const modal = document.getElementById('task-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        };
+
+        window.changeWeek = function(delta) {
+            currentWeekOffset += delta;
+            renderWeek();
+        };
+
+        window.goToToday = function() {
+            currentWeekOffset = 0;
+            renderWeek();
+        };
+
+        // Modal de Sincronización PC <-> Móvil
+        window.openSyncModal = function() {
+            const modal = document.getElementById('sync-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        };
+
+        window.closeSyncModal = function() {
+            const modal = document.getElementById('sync-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        };
+
+        window.copySyncCode = function() {
+            const code = workspaceCode;
+            const tempInput = document.createElement('input');
+            tempInput.value = code;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+            showToast('Código copiado al portapapeles 📋');
+        };
+
+        window.applyCustomSyncCode = function() {
+            const newCode = document.getElementById('input-sync-code').value.trim();
+            if (!newCode) return;
+            workspaceCode = newCode;
+            document.getElementById('display-sync-code').textContent = workspaceCode;
+            
+            // Actualizar URL sin recargar para mantener referencia fácil
+            const newUrl = new URL(window.location);
+            newUrl.searchParams.set('agenda', workspaceCode);
+            window.history.pushState({}, '', newUrl);
+
+            subscribeToTasks();
+            closeSyncModal();
+            showToast('¡Agenda vinculada correctamente! ☁️');
+        };
+
+        // Utilidades visuales
+        function showToast(msg, type = 'success') {
+            const toast = document.getElementById('toast');
+            const msgEl = document.getElementById('toast-message');
+            const iconEl = document.getElementById('toast-icon');
+
+            msgEl.textContent = msg;
+            iconEl.className = type === 'error' 
+                ? 'fa-solid fa-circle-exclamation text-pastel-pink' 
+                : 'fa-solid fa-circle-check text-pastel-mint';
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 2800);
+        }
+
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, tag => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                "'": '&#39;',
+                '"': '&quot;'
+            }[tag]));
+        }
+
+        // Cerrar modales con tecla Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeTaskModal();
+                closeSyncModal();
+            }
+        });
+
+        // Iniciar aplicación
+        window.addEventListener('DOMContentLoaded', () => {
+            renderWeek();
+            initFirebase();
+        });
+    </script>
+</body>
+</html>
